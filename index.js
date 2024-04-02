@@ -3,6 +3,7 @@ const { createServer } = require("node:http");
 const { join } = require("node:path");
 const { Server } = require("socket.io");
 const { DataSource } = require("typeorm");
+const cron = require("node-cron");
 const Message = require("./entity/Message");
 
 const AppDataSource = new DataSource({
@@ -54,6 +55,10 @@ async function main() {
       const result = await messageRepository.save(message);
       io.emit("chat message", msg, result.id);
     });
+  });
+
+  cron.schedule("*/14 * * * *", () => {
+    console.log("This logs something to the console every 14 minutes");
   });
 
   server.listen(3000, () => {});
