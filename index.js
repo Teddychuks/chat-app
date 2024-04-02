@@ -3,7 +3,6 @@ const { createServer } = require("node:http");
 const { join } = require("node:path");
 const { Server } = require("socket.io");
 const { DataSource } = require("typeorm");
-const cron = require("node-cron");
 const Message = require("./entity/Message");
 
 const AppDataSource = new DataSource({
@@ -36,14 +35,22 @@ async function main() {
     res.sendFile(join(__dirname, "index.html"));
   });
 
-  io.on("connection", (socket) => {
+  io.on("connection", async (socket) => {
+    // Fetch existing messages from the database
+    const messageRepository = AppDataSource.getRepository(Message);
+    const existingMessages = await messageRepository.find();
+
+    // Send the existing messages to the new client
+    existingMessages.forEach((message) => {
+      socket.emit("chat message", message.content, message.id);
+    });
+
     socket.on("request missed messages", async (lastIdReceived) => {
       const messageRepository = AppDataSource.getRepository(Message);
       const missedMessages = await messageRepository
         .createQueryBuilder("message")
         .where("message.id > :lastIdReceived", { lastIdReceived })
         .getMany();
-
       missedMessages.forEach((message) => {
         socket.emit("chat message", message.content, message.id);
       });
@@ -55,10 +62,6 @@ async function main() {
       const result = await messageRepository.save(message);
       io.emit("chat message", msg, result.id);
     });
-  });
-
-  cron.schedule("*/14 * * * *", () => {
-    console.log("This logs something to the console every 14 minutes");
   });
 
   server.listen(3000, () => {});

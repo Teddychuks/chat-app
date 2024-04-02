@@ -63,15 +63,24 @@
     </form>
     <script src="/socket.io/socket.io.js"></script>
     <script>
-      const socket = io({
-        auth: {
-          serverOffset: 0,
-        },
-      });
-
+      const socket = io({ auth: { serverOffset: 0 } });
       const form = document.getElementById("form");
       const input = document.getElementById("input");
       const messages = document.getElementById("messages");
+
+      // Function to fetch messages from the server
+      async function fetchMessages() {
+        const response = await fetch("/messages");
+        const messagesData = await response.json();
+        messagesData.forEach((message) => {
+          const item = document.createElement("li");
+          item.textContent = message.content;
+          messages.appendChild(item);
+        });
+      }
+
+      // Fetch messages when the page loads
+      fetchMessages();
 
       form.addEventListener("submit", (e) => {
         e.preventDefault();
