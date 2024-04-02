@@ -36,11 +36,9 @@ async function main() {
   });
 
   io.on("connection", async (socket) => {
-    // Fetch existing messages from the database
     const messageRepository = AppDataSource.getRepository(Message);
     const existingMessages = await messageRepository.find();
 
-    // Send the existing messages to the new client
     existingMessages.forEach((message) => {
       socket.emit("chat message", message.content, message.id);
     });
